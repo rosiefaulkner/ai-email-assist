@@ -1,5 +1,5 @@
 # Gmail Agentic AI Spam Filter with Knowledge Graph & RAG
-This project implements a Knowledge Graph built on top of a tailored RAG (Retrieval Augmented Generation) system using FastAPI, LangGraph and Gemini to filter your Gmail inbox. Agents toss spam, scams and ads in the trash. This agentic AI system learns your preferences for what to keep and what to throw away and accesses this knowledge through vector retrieval. It doesn't require a prompt or triggers. 
+This email inbox helper implements a Knowledge Graph built on top of a tailored RAG (Retrieval Augmented Generation) system using FastAPI, LangGraph and Gemini to filter your Gmail inbox. Agents toss spam, scams and ads in the trash. This agentic AI system learns your preferences for what to keep and what to throw away and accesses this knowledge through vector retrieval. It doesn't require a prompt or triggers. 
 
 ## Project Structure
 
