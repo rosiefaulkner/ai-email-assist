@@ -54,3 +54,9 @@ chromadb/
 
 # Gmail Client
 credentials.json
+quickstart.py
+token.pickle
+
+# Git
+.gitignore
+.git/
