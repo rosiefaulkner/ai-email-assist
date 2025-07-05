@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     TOP_P: float = 0.95
     TOP_K: int = 40
 
+    # LangSmith settings
+    LANGSMITH_TRACING: Optional[str] = None
+    LANGSMITH_ENDPOINT: Optional[str] = None
+    LANGSMITH_API_KEY: Optional[str] = None
+    LANGSMITH_PROJECT: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True

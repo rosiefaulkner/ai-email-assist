@@ -15,6 +15,8 @@ Args:
     query (str)
     **kwargs (_type_)
 """
+
+
 class RAGAgent:
     def __init__(self):
         self.settings = get_settings()
@@ -96,7 +98,7 @@ class RAGAgent:
 
     def _prepare_context(self, documents: List[Dict[str, Any]]) -> List[str]:
         """
-        Prepare the context for the LLM by formatting the documents. 
+        Prepare the context for the LLM by formatting the documents.
         Args:
             documents (List[Dict[str, Any]]): List of documents with 'content' and 'metadata'
         Returns:

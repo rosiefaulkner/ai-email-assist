@@ -1,8 +1,7 @@
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List
 
-from langgraph.graph import Graph, StateGraph
-from langgraph.prebuilt import ToolExecutor
-from langgraph.prebuilt.tool_nodes import ToolNode
+from langgraph.graph import StateGraph
+from langgraph.graph.state import END
 
 from ..agents.gemini_agent import GeminiAgent
 from ..agents.rag_agent import RAGAgent
@@ -21,16 +20,19 @@ Methods:
     _should_regenerate(self, state: Dict[str, Any]) -> bool: Determine if response should be regenerated.
     run(self, inputs: Dict[str, Any]) -> Dict[str, Any]: Run the workflow with given inputs.
 """
+
+
 class RAGWorkflow:
     def __init__(self):
         self.rag_agent = RAGAgent()
         self.llm_agent = GeminiAgent()
         self.graph = self._build_graph()
 
-    def _build_graph(self) -> Graph:
+    def _build_graph(self) -> StateGraph:
         """Build the LangGraph workflow."""
         # Initialize the graph
-        workflow = StateGraph(StateType=Dict)
+        # Update StateGraph initialization to use Annotated for state schema
+        workflow = StateGraph(Annotated[Dict, "email_assistant_state"])
 
         # Define nodes
         workflow.add_node("retrieve", self._retrieve_context)
@@ -40,16 +42,16 @@ class RAGWorkflow:
         # Define edges
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", "validate")
+        workflow.add_edge("validate", END)
 
         # Add conditional edge for response regeneration
         workflow.add_conditional_edges(
-            "validate", self._should_regenerate, {True: "generate", False: "end"}
+            "validate", self._should_regenerate, {True: "generate", False: END}
         )
 
         # Compile the graph
         workflow.set_entry_point("retrieve")
-        workflow.set_finish_point("end")
-
+        workflow.add_edge("validate", END)
         return workflow.compile()
 
     async def _retrieve_context(self, state: Dict[str, Any]) -> Dict[str, Any]:

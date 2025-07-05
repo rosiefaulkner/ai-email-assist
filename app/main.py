@@ -41,7 +41,7 @@ async def process_query(request: QueryRequest):
         HTTPException: If there is an error processing the query.
     """
     try:
-        result = workflow.run({"query": request.query, "context": request.context})
+        result = await workflow.run({"query": request.query, "context": request.context})
 
         return Response(
             answer=result["answer"],

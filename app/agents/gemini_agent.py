@@ -22,6 +22,8 @@ Args:
     context (List[str], optional)
     **kwargs
 """
+
+
 class GeminiAgent:
     def __init__(self):
         settings = get_settings()
