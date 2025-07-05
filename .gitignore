@@ -56,6 +56,7 @@ chromadb/
 credentials.json
 quickstart.py
 token.pickle
+token.json
 
 # Git
 .gitignore
