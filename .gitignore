@@ -51,3 +51,6 @@ chromadb/
 
 # macOS
 .DS_Store
+
+# Gmail Client
+credentials.json
