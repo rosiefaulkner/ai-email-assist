@@ -4,7 +4,24 @@ import google.generativeai as genai
 
 from ..config import get_settings
 
-
+"""
+GeminiAgent class for interacting with Google Gemini. This class provides methods to generate responses,
+analyze relevance, and prepare prompts for the Gemini model.
+Attributes:
+    model: The Gemini model instance.
+    settings: The application settings.
+Methods:
+    generate_response(query: str, context: List[str] = None, **kwargs) -> Dict[str, Any]:
+        Generate a response using Google Gemini with email context.
+    _prepare_prompt(query: str, context: List[str] = None) -> str:
+        Prepare the prompt with context for the Gemini model.
+    analyze_relevance(query: str, document: str) -> float:
+        Analyze the relevance of a document to a query using Google Gemini.
+Args:
+    query (str)
+    context (List[str], optional)
+    **kwargs
+"""
 class GeminiAgent:
     def __init__(self):
         settings = get_settings()
@@ -15,9 +32,17 @@ class GeminiAgent:
     async def generate_response(
         self, query: str, context: List[str] = None, **kwargs
     ) -> Dict[str, Any]:
-        """Generate a response using Google Gemini with optional context."""
+        """
+        Generate a response using Google Gemini with email context.
+        Args:
+            query (str): The user query.
+            context (List[str]): List of context strings.
+            **kwargs: Additional keyword arguments for generation configuration.
+        Returns:
+            Dict[str, Any]: The response from the Gemini model.
+        """
         try:
-            # Prepare the prompt with context if available
+            # Prepare the prompt with email message as context
             prompt = self._prepare_prompt(query, context)
 
             # Generate response
@@ -53,7 +78,14 @@ class GeminiAgent:
             }
 
     def _prepare_prompt(self, query: str, context: List[str] = None) -> str:
-        """Prepare the prompt with context for the Gemini model."""
+        """
+        Prepare the prompt with context for the Gemini model.
+        Args:
+            query (str): The user query.
+            context (List[str]): List of context strings.
+        Returns:
+            str: The prepared prompt.
+        """
         if not context:
             return query
 
@@ -67,7 +99,15 @@ Based on the above context, please answer the following question:
         return prompt
 
     async def analyze_relevance(self, query: str, document: str) -> float:
-        """Analyze the relevance of a document to the query."""
+        """
+        Analyze the relevance of a document to a query using Google Gemini.
+        Returns a score between 0 and 1, where 1 indicates perfect relevance.
+        Args:
+            query (str): The query to analyze.
+            document (str): The document to analyze.
+        Returns:
+            float: The relevance score between 0 and 1.
+        """
         try:
             prompt = f"""On a scale of 0 to 1, how relevant is this document to the query?
 Query: {query}

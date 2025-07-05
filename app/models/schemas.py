@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class UserQuery(BaseModel):
-    """Schema for user query requests."""
+    """
+    Schema for user query requests. This includes the user's query and any additional context.
+    """
 
     query: str = Field(..., description="The user's question or query")
     context: Dict[str, Any] = Field(
@@ -13,7 +15,9 @@ class UserQuery(BaseModel):
 
 
 class Source(BaseModel):
-    """Schema for source documents used in RAG."""
+    """
+    Schema for source documents used in RAG. This includes the content of the document and any metadata.
+    """
 
     content: str = Field(..., description="The content of the source document")
     metadata: Dict[str, Any] = Field(
@@ -25,7 +29,9 @@ class Source(BaseModel):
 
 
 class Response(BaseModel):
-    """Schema for API responses."""
+    """
+    Schema for API responses. This includes the generated response, any sources used, and any additional metadata.
+    """
 
     answer: Optional[str] = Field(
         None, description="The generated response to the query"
@@ -43,7 +49,9 @@ class Response(BaseModel):
 
 
 class DocumentInput(BaseModel):
-    """Schema for adding new documents to the RAG system."""
+    """
+    Schema for adding new documents to the RAG system. This includes the content of the document and any metadata.
+    """
 
     content: str = Field(..., description="The content of the document")
     metadata: Dict[str, Any] = Field(
@@ -52,7 +60,9 @@ class DocumentInput(BaseModel):
 
 
 class ValidationResponse(BaseModel):
-    """Schema for validation responses."""
+    """
+    Schema for validation responses. This includes whether the response is valid and any feedback.
+    """
 
     is_valid: bool = Field(..., description="Whether the response is valid")
     quality_score: float = Field(

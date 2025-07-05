@@ -7,6 +7,17 @@ from chromadb.config import Settings as ChromaSettings
 
 from ..config import get_settings
 
+"""
+Vector Store class for storing and searching documents.
+Args:
+    settings: Settings instance
+    client: Chroma client
+    collection: Chroma collection
+
+Returns:
+    VectorStore instance
+"""
+
 
 class VectorStore:
     def __init__(self):
@@ -22,12 +33,12 @@ class VectorStore:
 
     async def add_documents(self, documents: List[Dict[str, Any]]) -> bool:
         """Add documents to the vector store.
-
+        Starts by preparing document batches. Then adds documents to collection.
         Args:
             documents: List of documents with 'content', 'embedding', and 'metadata'
         """
         try:
-            # Prepare document batches
+            # Generate document IDs
             ids = [
                 str(i)
                 for i in range(
@@ -39,7 +50,6 @@ class VectorStore:
             contents = [doc["content"] for doc in documents]
             metadatas = [doc["metadata"] for doc in documents]
 
-            # Add documents to collection
             await asyncio.get_event_loop().run_in_executor(
                 self._executor,
                 lambda: self.collection.add(

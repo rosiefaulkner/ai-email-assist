@@ -31,8 +31,16 @@ class QueryRequest(BaseModel):
 
 @app.post("/query", response_model=Response)
 async def process_query(request: QueryRequest):
+    """
+    Process a user query through the LangGraph workflow.
+    Args:
+        request (QueryRequest): The user query request.
+    Returns:
+        Response: The response containing the answer and sources.]
+    Raises:
+        HTTPException: If there is an error processing the query.
+    """
     try:
-        # Process the query through the LangGraph workflow
         result = workflow.run({"query": request.query, "context": request.context})
 
         return Response(

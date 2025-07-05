@@ -7,7 +7,20 @@ from langgraph.prebuilt.tool_nodes import ToolNode
 from ..agents.gemini_agent import GeminiAgent
 from ..agents.rag_agent import RAGAgent
 
-
+"""
+RAGWorkflow: A class that encapsulates the LangGraph workflow for the RAG application.
+Attributes:
+    rag_agent (RAGAgent): An instance of the RAGAgent class.
+    llm_agent (LLMAgent): An instance of the LLMAgent class.
+    graph (Graph): The LangGraph workflow.
+Methods:
+    _build_graph(self) -> Graph: Build the LangGraph workflow.
+    _retrieve_context(self, state: Dict[str, Any]) -> Dict[str, Any]: Retrieve relevant context for the query.
+    _generate_response(self, state: Dict[str, Any]) -> Dict[str, Any]: Generate response using the LLM.
+    _validate_response(self, state: Dict[str, Any]) -> Dict[str, Any]: Validate the generated response.
+    _should_regenerate(self, state: Dict[str, Any]) -> bool: Determine if response should be regenerated.
+    run(self, inputs: Dict[str, Any]) -> Dict[str, Any]: Run the workflow with given inputs.
+"""
 class RAGWorkflow:
     def __init__(self):
         self.rag_agent = RAGAgent()

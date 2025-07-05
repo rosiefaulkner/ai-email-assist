@@ -5,7 +5,16 @@ from ..utils.embeddings import EmbeddingUtil
 from ..utils.vector_store import VectorStore
 from .gemini_agent import GeminiAgent
 
-
+"""
+RAGAgent class for processing queries using RAG methodology.
+Args:
+    settings (Settings)
+    vector_store (VectorStore)
+    embedding_util (EmbeddingUtil)
+    llm (LLM)
+    query (str)
+    **kwargs (_type_)
+"""
 class RAGAgent:
     def __init__(self):
         self.settings = get_settings()
@@ -14,7 +23,14 @@ class RAGAgent:
         self.llm = GeminiAgent()
 
     async def process_query(self, query: str, **kwargs) -> Dict[str, Any]:
-        """Process a query using RAG methodology."""
+        """
+        Process a query using RAG methodology.
+        Args:
+            query (str): The query to process
+            **kwargs: Additional keyword arguments for LLM
+        Returns:
+            Dict[str, Any]: The response from the LLM
+        """
         try:
             # Get relevant documents
             relevant_docs = await self.retrieve_relevant_documents(query)
@@ -52,7 +68,13 @@ class RAGAgent:
             }
 
     async def retrieve_relevant_documents(self, query: str) -> List[Dict[str, Any]]:
-        """Retrieve relevant documents for the query."""
+        """
+        Retrieve relevant documents for the query.
+        Args:
+            query (str): The query to search for
+        Returns:
+            List[Dict[str, Any]]: List of relevant documents with 'content', 'metadata', and'relevance_score'
+        """
         # Get initial candidates from vector store
         candidates = await self.vector_store.similarity_search(
             query=query, k=self.settings.MAX_DOCUMENTS
@@ -73,7 +95,13 @@ class RAGAgent:
         return relevant_docs
 
     def _prepare_context(self, documents: List[Dict[str, Any]]) -> List[str]:
-        """Prepare context from relevant documents."""
+        """
+        Prepare the context for the LLM by formatting the documents. 
+        Args:
+            documents (List[Dict[str, Any]]): List of documents with 'content' and 'metadata'
+        Returns:
+            List[str]: Formatted context
+        """
         context = []
         for doc in documents:
             # Format the document content with metadata
@@ -84,7 +112,14 @@ class RAGAgent:
         return context
 
     async def add_document(self, content: str, metadata: Dict[str, Any] = None) -> bool:
-        """Add a new document to the vector store."""
+        """
+        Add a new document to the vector store.
+        Args:
+            content (str): The content of the document
+            metadata (Dict[str, Any], optional): Additional metadata for the document
+        Returns:
+            bool: True if document was added successfully, False otherwise
+        """
         try:
             # Generate embeddings for the document
             embedding = await self.embedding_util.get_embedding(content)
