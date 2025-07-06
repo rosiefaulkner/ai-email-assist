@@ -27,7 +27,8 @@ class VectorStore:
             settings=ChromaSettings(anonymized_telemetry=False),
         )
         self.collection = self.client.get_or_create_collection(
-            name="documents", metadata={"hnsw:space": "cosine"}
+            name="documents",
+            metadata={"hnsw:space": "cosine", "dimension": 768}
         )
         self._executor = ThreadPoolExecutor(max_workers=4)
 
@@ -38,7 +39,6 @@ class VectorStore:
             documents: List of documents with 'content', 'embedding', and 'metadata'
         """
         try:
-            # Generate document IDs
             ids = [
                 str(i)
                 for i in range(
@@ -76,7 +76,6 @@ class VectorStore:
             filter: Optional metadata filter
         """
         try:
-            # Get results from collection
             results = await asyncio.get_event_loop().run_in_executor(
                 self._executor,
                 lambda: self.collection.query(

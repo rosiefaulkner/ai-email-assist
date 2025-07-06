@@ -76,11 +76,11 @@ class RAGWorkflow:
         """Validate the generated response."""
         response = state["response"]
 
-        # Check for error conditions
+        # Check for errors
         if response.get("error"):
             return {**state, "valid": False, "error": response["error"]}
 
-        # Validate response quality
+        # Get quality score for response
         validation_prompt = f"""Rate the quality of this response on a scale of 0 to 1:
 {response['answer']}
 

@@ -9,7 +9,7 @@ class UserQuery(BaseModel):
     """
 
     query: str = Field(..., description="The user's question or query")
-    context: Dict[str, Any] = Field(
+    context: Optional[Dict[str, Any]] = Field(
         default_factory=dict, description="Additional context for the query"
     )
 

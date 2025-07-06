@@ -93,11 +93,10 @@ class GeminiAgent:
 
         context_str = "\n".join(context)
         prompt = f"""Context information:
-{context_str}
-
-Based on the above context, please answer the following question:
-{query}
-"""
+        {context_str} Based on the above context,
+        please answer the following question:
+        {query}
+        """
         return prompt
 
     async def analyze_relevance(self, query: str, document: str) -> float:
@@ -112,14 +111,15 @@ Based on the above context, please answer the following question:
         """
         try:
             prompt = f"""On a scale of 0 to 1, how relevant is this document to the query?
-Query: {query}
-Document: {document}
+            Query: {query}
+            Document: {document}
 
-Provide only the numerical score without any explanation."""
+            Provide only the numerical score without any explanation.
+            """
 
             response = await self.model.generate_content_async(prompt)
             score = float(response.text.strip())
             return min(max(score, 0), 1)  # Ensure score is between 0 and 1
 
         except Exception:
-            return 0.0  # Return 0 relevance on error
+            return 0.0

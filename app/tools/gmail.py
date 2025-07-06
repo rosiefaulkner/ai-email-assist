@@ -2,9 +2,11 @@ import os.path
 import pickle
 from typing import Dict, List, Optional
 
+import aiohttp
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from googleapiclient.http import HttpRequest
 
 
 class GmailClient:
@@ -44,7 +46,7 @@ class GmailClient:
 
         self.service = build("gmail", "v1", credentials=creds)
 
-    def get_messages(self, max_results: int = 10) -> List[Dict[str, str]]:
+    async def get_messages(self, max_results: int = 10) -> List[Dict[str, str]]:
         """Retrieve messages from the user's inbox.
 
         Args:
@@ -54,12 +56,10 @@ class GmailClient:
             List of message dictionaries containing id and snippet
         """
         try:
-            results = (
-                self.service.users()
-                .messages()
-                .list(userId="me", labelIds=["INBOX"], maxResults=max_results)
-                .execute()
-            )
+            request = self.service.users().messages().list(userId="me", labelIds=["INBOX"], maxResults=max_results)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(request.uri, headers=request.headers) as response:
+                    results = await response.json()
 
             messages = results.get("messages", [])
             if not messages:
@@ -67,12 +67,10 @@ class GmailClient:
 
             message_list = []
             for message in messages:
-                msg = (
-                    self.service.users()
-                    .messages()
-                    .get(userId="me", id=message["id"])
-                    .execute()
-                )
+                request = self.service.users().messages().get(userId="me", id=message["id"])
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(request.uri, headers=request.headers) as response:
+                        msg = await response.json()
                 message_list.append({"id": message["id"], "snippet": msg["snippet"]})
 
             return message_list
@@ -81,7 +79,7 @@ class GmailClient:
             print(f"Error retrieving messages: {str(e)}")
             return []
 
-    def get_message_by_id(self, message_id: str) -> Optional[Dict[str, str]]:
+    async def get_message_by_id(self, message_id: str) -> Optional[Dict[str, str]]:
         """Retrieve a specific message by its ID.
 
         Args:
@@ -91,12 +89,10 @@ class GmailClient:
             Message dictionary containing id and snippet, or None if not found
         """
         try:
-            msg = (
-                self.service.users()
-                .messages()
-                .get(userId="me", id=message_id)
-                .execute()
-            )
+            request = self.service.users().messages().get(userId="me", id=message_id)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(request.uri, headers=request.headers) as response:
+                    msg = await response.json()
 
             return {"id": message_id, "snippet": msg["snippet"]}
 
