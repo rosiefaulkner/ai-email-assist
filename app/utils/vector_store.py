@@ -27,8 +27,7 @@ class VectorStore:
             settings=ChromaSettings(anonymized_telemetry=False),
         )
         self.collection = self.client.get_or_create_collection(
-            name="documents",
-            metadata={"hnsw:space": "cosine", "dimension": 768}
+            name="documents", metadata={"hnsw:space": "cosine", "dimension": 768}
         )
         self._executor = ThreadPoolExecutor(max_workers=4)
 

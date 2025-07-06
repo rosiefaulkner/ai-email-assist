@@ -56,9 +56,15 @@ class GmailClient:
             List of message dictionaries containing id and snippet
         """
         try:
-            request = self.service.users().messages().list(userId="me", labelIds=["INBOX"], maxResults=max_results)
+            request = (
+                self.service.users()
+                .messages()
+                .list(userId="me", labelIds=["INBOX"], maxResults=max_results)
+            )
             async with aiohttp.ClientSession() as session:
-                async with session.get(request.uri, headers=request.headers) as response:
+                async with session.get(
+                    request.uri, headers=request.headers
+                ) as response:
                     results = await response.json()
 
             messages = results.get("messages", [])
@@ -67,9 +73,13 @@ class GmailClient:
 
             message_list = []
             for message in messages:
-                request = self.service.users().messages().get(userId="me", id=message["id"])
+                request = (
+                    self.service.users().messages().get(userId="me", id=message["id"])
+                )
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(request.uri, headers=request.headers) as response:
+                    async with session.get(
+                        request.uri, headers=request.headers
+                    ) as response:
                         msg = await response.json()
                 message_list.append({"id": message["id"], "snippet": msg["snippet"]})
 
@@ -91,7 +101,9 @@ class GmailClient:
         try:
             request = self.service.users().messages().get(userId="me", id=message_id)
             async with aiohttp.ClientSession() as session:
-                async with session.get(request.uri, headers=request.headers) as response:
+                async with session.get(
+                    request.uri, headers=request.headers
+                ) as response:
                     msg = await response.json()
 
             return {"id": message_id, "snippet": msg["snippet"]}

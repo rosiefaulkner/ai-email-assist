@@ -37,27 +37,37 @@ class RAGAgent:
             # Get relevant documents
             relevant_docs = await self.retrieve_relevant_documents(query)
 
-            # If no relevant documents found
-            if not relevant_docs:
-                return await self.llm.generate_response(query)
-
             # Extract and format context from relevant documents
-            context = self._prepare_context(relevant_docs)
+            context = self._prepare_context(relevant_docs) if relevant_docs else []
 
             # Generate response using LLM with context
             response = await self.llm.generate_response(
                 query=query, context=context, **kwargs
             )
 
+            if response.get("error"):
+                print(f"Error generating response: {response['error']}")
+                return response
+
             # Add source information to response
-            response["sources"] = [
-                {
-                    "content": doc["content"],
-                    "metadata": doc["metadata"],
-                    "relevance_score": doc["score"],
-                }
-                for doc in relevant_docs
-            ]
+            response["sources"] = (
+                [
+                    {
+                        "content": doc["content"],
+                        "metadata": doc["metadata"],
+                        "relevance_score": doc["score"],
+                    }
+                    for doc in relevant_docs
+                ]
+                if relevant_docs
+                else []
+            )
+
+            # Ensure we have an answer even if no relevant docs found
+            if not response.get("answer"):
+                response["answer"] = (
+                    "I couldn't find any relevant information in your emails to answer this question."
+                )
 
             return response
 

@@ -1,10 +1,11 @@
 import asyncio
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
+from ..config import get_settings
 from ..tools.gmail import GmailClient
 from ..utils.embeddings import EmbeddingUtil
 from ..utils.vector_store import VectorStore
-from ..config import get_settings
+
 
 class EmailSyncService:
     def __init__(self):
@@ -42,23 +43,25 @@ class EmailSyncService:
             # Process each email
             for message in messages:
                 # Generate embedding for email content
-                embedding = await self.embedding_util.get_embedding(message['snippet'])
+                embedding = await self.embedding_util.get_embedding(message["snippet"])
 
                 # Prepare metadata
                 metadata = {
-                    'email_id': message['id'],
-                    'source': 'gmail',
-                    'type': 'email'
+                    "email_id": message["id"],
+                    "source": "gmail",
+                    "type": "email",
                 }
 
                 # Add to vector store
-                await self.vector_store.add_documents([
-                    {
-                        'content': message['snippet'],
-                        'embedding': embedding,
-                        'metadata': metadata
-                    }
-                ])
+                await self.vector_store.add_documents(
+                    [
+                        {
+                            "content": message["snippet"],
+                            "embedding": embedding,
+                            "metadata": metadata,
+                        }
+                    ]
+                )
 
             return True
 

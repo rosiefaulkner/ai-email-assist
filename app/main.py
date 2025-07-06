@@ -1,5 +1,5 @@
-from typing import Any, Dict, List
 import asyncio
+from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,11 +26,13 @@ app.add_middleware(
 workflow = RAGWorkflow()
 email_sync_service = EmailSyncService()
 
+
 @app.on_event("startup")
 async def startup_event():
     """Start background services when the app starts."""
     # Start email sync service in the background
     asyncio.create_task(email_sync_service.start())
+
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -40,17 +42,27 @@ def shutdown_event():
 
 @app.post("/query", response_model=Response)
 async def process_query(request: UserQuery):
-    """
-    Process a user query through the LangGraph workflow.
-    Args:
-        request (UserQuery): The user query request.
-    Returns:
-        Response: The response containing the answer and sources.]
-    Raises:
-        HTTPException: If there is an error processing the query.
-    """
+    """Process a user query using RAG."""
     try:
-        result = await workflow.run({"query": request.query, "context": request.context})
+        if not request.query.strip():
+            return Response(
+                answer=None,
+                sources=[],
+                metadata={"error_type": "ValueError"},
+                error="Query cannot be empty",
+            )
+
+        result = await workflow.run(
+            {"query": request.query, "context": request.context}
+        )
+
+        if not result or not result.get("answer"):
+            return Response(
+                answer=None,
+                sources=result.get("sources", []),
+                metadata={"error_type": "NoResponseError"},
+                error="Failed to generate a response",
+            )
 
         return Response(
             answer=result["answer"],
@@ -58,7 +70,13 @@ async def process_query(request: UserQuery):
             metadata=result.get("metadata", {}),
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error processing query: {str(e)}")
+        return Response(
+            answer=None,
+            sources=[],
+            metadata={"error_type": type(e).__name__},
+            error=str(e),
+        )
 
 
 @app.get("/health")

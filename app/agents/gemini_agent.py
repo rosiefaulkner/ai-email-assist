@@ -44,6 +44,13 @@ class GeminiAgent:
             Dict[str, Any]: The response from the Gemini model.
         """
         try:
+            if not query.strip():
+                return {
+                    "answer": None,
+                    "error": "Query cannot be empty",
+                    "metadata": {"error_type": "ValueError"},
+                }
+
             # Prepare the prompt with email message as context
             prompt = self._prepare_prompt(query, context)
 
@@ -60,8 +67,15 @@ class GeminiAgent:
                 },
             )
 
+            if not response or not response.text:
+                return {
+                    "answer": None,
+                    "error": "No response generated from the model",
+                    "metadata": {"error_type": "ModelError"},
+                }
+
             return {
-                "answer": response.text,
+                "answer": response.text.strip(),
                 "metadata": {
                     "model": "gemini-pro",
                     "finish_reason": getattr(response, "finish_reason", None),
@@ -73,6 +87,7 @@ class GeminiAgent:
             }
 
         except Exception as e:
+            print(f"Error in generate_response: {str(e)}")
             return {
                 "error": str(e),
                 "answer": None,
