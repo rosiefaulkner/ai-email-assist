@@ -35,38 +35,67 @@ class EmailSyncService:
             bool: True if sync was successful
         """
         try:
+            print("Starting email sync...")
             # Get emails from Gmail
             messages = await self.gmail_client.get_messages(max_results=max_results)
             if not messages:
+                print("No new messages to sync")
                 return True
+
+            print(f"Found {len(messages)} messages to sync")
+            successful_syncs = 0
+            failed_syncs = 0
 
             # Process each email
             for message in messages:
-                # Generate embedding for email content
-                embedding = await self.embedding_util.get_embedding(message["snippet"])
+                try:
+                    if not message.get("snippet"):
+                        print(f"Skipping message {message.get('id')}: No content")
+                        continue
 
-                # Prepare metadata
-                metadata = {
-                    "email_id": message["id"],
-                    "source": "gmail",
-                    "type": "email",
-                }
+                    # Generate embedding for email content
+                    embedding = await self.embedding_util.get_embedding(
+                        message["snippet"]
+                    )
+                    if embedding is None:
+                        print(
+                            f"Failed to generate embedding for message {message.get('id')}"
+                        )
+                        failed_syncs += 1
+                        continue
 
-                # Add to vector store
-                await self.vector_store.add_documents(
-                    [
-                        {
-                            "content": message["snippet"],
-                            "embedding": embedding,
-                            "metadata": metadata,
-                        }
-                    ]
-                )
+                    # Prepare metadata
+                    metadata = {
+                        "email_id": message["id"],
+                        "source": "gmail",
+                        "type": "email",
+                        "timestamp": message.get("internalDate"),
+                        "subject": message.get("subject", "No subject"),
+                    }
 
-            return True
+                    # Add to vector store
+                    await self.vector_store.add_documents(
+                        [
+                            {
+                                "content": message["snippet"],
+                                "embedding": embedding,
+                                "metadata": metadata,
+                            }
+                        ]
+                    )
+                    successful_syncs += 1
+
+                except Exception as e:
+                    print(f"Error processing message {message.get('id')}: {str(e)}")
+                    failed_syncs += 1
+
+            print(
+                f"Sync completed: {successful_syncs} successful, {failed_syncs} failed"
+            )
+            return successful_syncs > 0 or failed_syncs == 0
 
         except Exception as e:
-            print(f"Error syncing emails: {str(e)}")
+            print(f"Error in sync_emails: {str(e)}")
             return False
 
     def stop(self):
