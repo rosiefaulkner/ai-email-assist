@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 import google.generativeai as genai
 
-from ..config import get_settings
+from app.config import get_settings
 
 """
 GeminiAgent class for interacting with Google Gemini. This class provides methods to generate responses,
@@ -138,3 +138,13 @@ class GeminiAgent:
 
         except Exception:
             return 0.0
+
+# import asyncio
+
+# async def main():
+#     client = GeminiAgent()
+#     messages = await client.generate_response(query="hi")
+#     print(messages)
+
+
+# asyncio.run(main())

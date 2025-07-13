@@ -55,16 +55,44 @@ class GmailClient:
         Returns:
             List of message dictionaries containing id and snippet
         """
+        return await self._fetch_messages(max_results)
+
+    async def get_last_email(self) -> Optional[Dict[str, str]]:
+        """Retrieve only the last email from the inbox.
+
+        Returns:
+            Dictionary containing id and snippet of the last email, or None if no emails found
+        """
+        messages = await self._fetch_messages(max_results=1)
+        return messages[0] if messages else None
+
+    async def _fetch_messages(self, max_results: int = 10) -> List[Dict[str, str]]:
+        """Internal method to fetch messages from Gmail API.
+
+        Args:
+            max_results: Maximum number of messages to retrieve
+
+        Returns:
+            List of message dictionaries containing id and snippet
+        """
         try:
             request = (
                 self.service.users()
                 .messages()
                 .list(userId="me", labelIds=["INBOX"], maxResults=max_results)
             )
+            
+            credentials = self.service._http.credentials
+            headers = request.headers.copy()
+            credentials.apply(headers)
+            
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    request.uri, headers=request.headers
+                    request.uri, headers=headers
                 ) as response:
+                    if response.status != 200:
+                        print(f"Error fetching message list: {response.status}")
+                        return []
                     results = await response.json()
 
             messages = results.get("messages", [])
@@ -73,15 +101,24 @@ class GmailClient:
 
             message_list = []
             for message in messages:
-                request = (
-                    self.service.users().messages().get(userId="me", id=message["id"])
-                )
+                detail_request = self.service.users().messages().get(userId="me", id=message["id"])
+                detail_headers = detail_request.headers.copy()
+                credentials.apply(detail_headers)
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.get(
-                        request.uri, headers=request.headers
+                        detail_request.uri, headers=detail_headers
                     ) as response:
-                        msg = await response.json()
-                message_list.append({"id": message["id"], "snippet": msg["snippet"]})
+                        if response.status == 200:
+                            msg_details = await response.json()
+                            message_list.append({
+                                "id": message["id"],
+                                "snippet": msg_details.get("snippet", "No preview available"),
+                                "subject": next((header["value"] for header in msg_details.get("payload", {}).get("headers", []) if header["name"].lower() == "subject"), "No subject"),
+                                "from": next((header["value"] for header in msg_details.get("payload", {}).get("headers", []) if header["name"].lower() == "from"), "Unknown sender")
+                            })
+                        else:
+                            print(f"Error fetching message {message['id']}: {response.status}")
 
             return message_list
 
@@ -111,3 +148,15 @@ class GmailClient:
         except Exception as e:
             print(f"Error retrieving message {message_id}: {str(e)}")
             return None
+import asyncio
+
+async def main():
+    client = GmailClient()
+    last_email = await client.get_last_email()
+    print("Last email details:")
+    print(f"From: {last_email['from']}")
+    print(f"Subject: {last_email['subject']}")
+    print(f"Snippet: {last_email['snippet']}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
