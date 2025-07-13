@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     LANGSMITH_ENDPOINT: Optional[str] = None
     LANGSMITH_API_KEY: Optional[str] = None
     LANGSMITH_PROJECT: Optional[str] = None
+    
+    # Langfuse settings
+    LANGFUSE_SECRET_KEY: Optional[str] = None
+    LANGFUSE_PUBLIC_KEY: Optional[str] = None
+    LANGFUSE_HOST: Optional[str] = None
 
     class Config:
         env_file = ".env"
