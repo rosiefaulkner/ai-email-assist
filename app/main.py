@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
 from pydantic import BaseModel
-
+from app.tools.gmail import GmailClient
 from app.config import Settings
 from app.graph.workflow import RAGWorkflow
 from app.services.email_sync import EmailSyncService
@@ -52,10 +52,25 @@ def shutdown_event():
 
 
 @app.post("/query", response_model=Response)
-async def process_query(request: UserQuery):
+async def process_query():
     """Process a user query using RAG."""
     # trace = langfuse.trace(name="process_query")
-    
+    context = GmailClient()
+    last_email = await context.get_last_email()
+    print(f"Last email details: {context}")
+
+    request = UserQuery(
+        query: "Analyze this email and determine if it is spam. Consider the sender, subject, content, and any suspicious patterns or red flags. Provide a clear explanation of why it is or is not spam.",
+        context: {
+            "email_content": last_email['snippet'],
+            "email_metadata": {
+                f"from: {last_email['from']}",
+                f"subject: {last_email['subject']}",
+                f"date: {last_email['date']}",
+            }
+        }
+        
+    )
     try:
         if not request.query.strip():
             # trace.error("Empty query")
@@ -114,6 +129,10 @@ async def process_query(request: UserQuery):
     # finally:
     #     await trace.end()
 
+async def main():
+    await process_query()
+if __name__ == "__main__":
+    asyncio.run(main()) 
 
 @app.get("/health")
 async def health_check():

@@ -86,9 +86,9 @@ class EmailSyncService:
                         successful_syncs += len(documents)
                     else:
                         failed_syncs += len(documents)
-
+            print(f"Documents: {documents}")
             print(f"Sync completed: {successful_syncs} successful, {failed_syncs} failed")
-            return successful_syncs > 0 or failed_syncs == 0
+            return documents
 
         except Exception as e:
             print(f"Error in sync_emails: {str(e)}")

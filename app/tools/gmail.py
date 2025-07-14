@@ -64,6 +64,7 @@ class GmailClient:
             Dictionary containing id and snippet of the last email, or None if no emails found
         """
         messages = await self._fetch_messages(max_results=1)
+        print(f"Last email details: {messages[0]}")
         return messages[0] if messages else None
 
     async def _fetch_messages(self, max_results: int = 10) -> List[Dict[str, str]]:
@@ -115,7 +116,11 @@ class GmailClient:
                                 "id": message["id"],
                                 "snippet": msg_details.get("snippet", "No preview available"),
                                 "subject": next((header["value"] for header in msg_details.get("payload", {}).get("headers", []) if header["name"].lower() == "subject"), "No subject"),
-                                "from": next((header["value"] for header in msg_details.get("payload", {}).get("headers", []) if header["name"].lower() == "from"), "Unknown sender")
+                                "from": next((header["value"] for header in msg_details.get("payload", {}).get("headers", []) if header["name"].lower() == "from"), "Unknown sender"),
+                                "date": msg_details.get("internalDate", "Unknown date"),
+                                "attachments": msg_details.get("attachments", []),
+                                "threadId": msg_details.get("threadId", "No threadId available"),
+                                "raw": msg_details.get("raw", "No raw available"),
                             })
                         else:
                             print(f"Error fetching message {message['id']}: {response.status}")
@@ -148,15 +153,15 @@ class GmailClient:
         except Exception as e:
             print(f"Error retrieving message {message_id}: {str(e)}")
             return None
-import asyncio
+# import asyncio
 
-async def main():
-    client = GmailClient()
-    last_email = await client.get_last_email()
-    print("Last email details:")
-    print(f"From: {last_email['from']}")
-    print(f"Subject: {last_email['subject']}")
-    print(f"Snippet: {last_email['snippet']}")
+# async def main():
+#     client = GmailClient()
+#     last_email = await client.get_last_email()
+#     print("Last email details:")
+#     print(f"From: {last_email['from']}")
+#     print(f"Subject: {last_email['subject']}")
+#     print(f"Snippet: {last_email['snippet']}")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
