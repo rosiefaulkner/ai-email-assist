@@ -7,10 +7,11 @@ from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
 from pydantic import BaseModel
 
-from .config import Settings
-from .graph.workflow import RAGWorkflow
-from .models.schemas import Response, UserQuery
-from .services.email_sync import EmailSyncService
+from app.config import Settings
+from app.graph.workflow import RAGWorkflow
+from app.services.email_sync import EmailSyncService
+from app.models.schemas import Response, UserQuery
+
 
 app = FastAPI(title="LangGraph RAG API")
 settings = Settings()
@@ -92,7 +93,7 @@ async def process_query(request: UserQuery):
         #     }
         # )
         print(f"hello: {result}")
-        chain.invoke({"input": request.query}, config={"callbacks": [langfuse_handler]})
+        workflow.invoke({"input": request.query}, config={"callbacks": [langfuse_handler]})
 
         return Response(
             answer=result["answer"],
