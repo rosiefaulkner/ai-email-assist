@@ -53,6 +53,12 @@ Create a `.env` file with:
 GOOGLE_API_KEY=your_api_key_here
 ```
 
+## Models
+Switch models by running the below to list available models:
+```python
+python3 -m app.tools.list_models
+```
+
 ## Usage
 
 Run the FastAPI application:

@@ -1,72 +1,71 @@
 from typing import List, Union
-
+import google.generativeai as genai
 import numpy as np
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from sklearn.decomposition import PCA
+import time
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 from ..config import get_settings
-
 
 class EmbeddingUtil:
     def __init__(self):
         self.settings = get_settings()
-        self.model = GoogleGenerativeAIEmbeddings(
-            google_api_key=self.settings.GOOGLE_API_KEY,
-            model="models/embedding-001",
-            task_type="RETRIEVAL_DOCUMENT",
-        )
-        self.pca = PCA(n_components=768)
-        self.pca_fitted = False
+        genai.configure(api_key=self.settings.GOOGLE_API_KEY)
 
+    @retry(wait=wait_exponential(multiplier=2, min=10, max=30), stop=stop_after_attempt(5))
     async def get_embedding(
         self, text: Union[str, List[str]]
     ) -> Union[List[float], List[List[float]]]:
-        """Generate embeddings for text using Google's Embedding API.
-
-        Args:
-            text: Single text string or list of text strings
-
-        Returns:
-            List of embeddings or list of lists for batch processing
-        """
         try:
             # Handle single text input
             if isinstance(text, str):
-                embedding = await self.model.aembed_query(text)
-                # Reshape for PCA
-                embedding_array = np.array(embedding).reshape(1, -1)
-                if not self.pca_fitted:
-                    self.pca.fit(embedding_array)
-                    self.pca_fitted = True
-                reduced_embedding = self.pca.transform(embedding_array)[0].tolist()
-                return reduced_embedding
+                result = genai.embed_content(model="embedding-001", content=text)
+                time.sleep(3)  # Add longer delay between requests
+                return result['embedding']
 
             # Handle batch processing
-            embeddings = await self.model.aembed_documents(text)
-            embeddings_array = np.array(embeddings)
-            if not self.pca_fitted:
-                self.pca.fit(embeddings_array)
-                self.pca_fitted = True
-            reduced_embeddings = self.pca.transform(embeddings_array).tolist()
-            return reduced_embeddings
+            embeddings = []
+            for t in text:
+                result = genai.embed_content(model="embedding-001", content=t)
+                time.sleep(3)  # Add longer delay between requests
+                embeddings.append(result['embedding'])
+            return embeddings
 
         except Exception as e:
             print(f"Error generating embedding: {str(e)}")
             # Return zero vector as fallback
-            return [0.0] * 768  # Gemini embedding-001 dimension
+            dim = 768  # embedding-001 dimension
+            return [0.0] * dim if isinstance(text, str) else [[0.0] * dim]
+
+    @retry(wait=wait_exponential(multiplier=2, min=10, max=30), stop=stop_after_attempt(5))
+    async def batch_get_embeddings(
+        self, texts: List[str], batch_size: int = 5
+    ) -> List[List[float]]:
+        try:
+            if not texts:
+                return []
+                
+            # Process texts in batches
+            all_embeddings = []
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                batch_embeddings = []
+                for text in batch:
+                    result = genai.embed_content(model="embedding-001", content=text)
+                    time.sleep(3)  # Add longer delay between requests
+                    batch_embeddings.append(result['embedding'])
+                time.sleep(5)  # Add delay between batches
+                all_embeddings.extend(batch_embeddings)
+            
+            return all_embeddings
+
+        except Exception as e:
+            print(f"Error in batch embedding generation: {str(e)}")
+            # Return zero vectors as fallback
+            return [[0.0] * 768 for _ in texts]  # embedding-001 dimension
 
     def compute_similarity(
         self, embedding1: List[float], embedding2: List[float]
     ) -> float:
-        """Compute cosine similarity between two embeddings.
-
-        Args:
-            embedding1: First embedding vector
-            embedding2: Second embedding vector
-
-        Returns:
-            Cosine similarity score between 0 and 1
-        """
         try:
             # Convert to numpy arrays
             vec1 = np.array(embedding1)
@@ -83,25 +82,3 @@ class EmbeddingUtil:
         except Exception as e:
             print(f"Error computing similarity: {str(e)}")
             return 0.0
-
-    async def batch_get_embeddings(
-        self, texts: List[str], batch_size: int = 32
-    ) -> List[List[float]]:
-        """Generate embeddings for a list of texts in batches.
-
-        Args:
-            texts: List of text strings
-            batch_size: Number of texts to process in each batch
-
-        Returns:
-            List of embedding vectors
-        """
-        try:
-            # Process all texts at once since LangChain handles batching internally
-            embeddings = await self.model.aembed_documents(texts)
-            return embeddings
-
-        except Exception as e:
-            print(f"Error in batch embedding generation: {str(e)}")
-            # Return zero vectors as fallback
-            return [[0.0] * 768 for _ in texts]  # Gemini embedding-001 dimension

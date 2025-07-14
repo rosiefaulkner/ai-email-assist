@@ -32,22 +32,35 @@ class VectorStore:
         self._executor = ThreadPoolExecutor(max_workers=4)
 
     async def add_documents(self, documents: List[Dict[str, Any]]) -> bool:
-        """Add documents to the vector store.
-        Starts by preparing document batches. Then adds documents to collection.
-        Args:
-            documents: List of documents with 'content', 'embedding', and 'metadata'
-        """
         try:
-            ids = [
-                str(i)
-                for i in range(
-                    self.collection.count(), self.collection.count() + len(documents)
-                )
-            ]
+            ids = [str(i) for i in range(self.collection.count(), self.collection.count() + len(documents))]
 
-            embeddings = [doc["embedding"] for doc in documents]
-            contents = [doc["content"] for doc in documents]
-            metadatas = [doc["metadata"] for doc in documents]
+            # Validate and prepare data
+            embeddings = []
+            contents = []
+            metadatas = []
+
+            for doc in documents:
+                # Validate embedding
+                if not isinstance(doc["embedding"], list) or not all(isinstance(x, (int, float)) for x in doc["embedding"]):
+                    print(f"Invalid embedding format: {doc['embedding'][:10]}...")
+                    continue
+
+                # Validate and convert metadata values to strings
+                metadata = {}
+                for k, v in doc["metadata"].items():
+                    if v is not None:
+                        metadata[k] = str(v)
+
+                embeddings.append(doc["embedding"])
+                contents.append(doc["content"])
+                metadatas.append(metadata)
+
+            if not embeddings:  # Skip if no valid documents
+                return False
+
+            # Update ids to match valid document count
+            ids = ids[:len(embeddings)]
 
             await asyncio.get_event_loop().run_in_executor(
                 self._executor,
