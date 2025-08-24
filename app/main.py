@@ -17,12 +17,16 @@ app = FastAPI(title="LangGraph RAG API")
 settings = Settings()
 
 # Initialize Langfuse
-langfuse = Langfuse(
-    public_key=settings.LANGFUSE_PUBLIC_KEY,
-    secret_key=settings.LANGFUSE_SECRET_KEY,
-    host=settings.LANGFUSE_HOST
-)
+import os
+from langfuse import get_client
 
+# Langfuse environment variables
+os.environ['LANGFUSE_PUBLIC_KEY'] = settings.LANGFUSE_PUBLIC_KEY
+os.environ['LANGFUSE_SECRET_KEY'] = settings.LANGFUSE_SECRET_KEY
+os.environ['LANGFUSE_HOST'] = settings.LANGFUSE_HOST
+
+# Langfuse client
+langfuse = get_client()
 langfuse_handler = CallbackHandler()
 
 # Configure middleware
@@ -52,16 +56,16 @@ def shutdown_event():
 
 
 @app.post("/query", response_model=Response)
-async def process_query():
+async def process_query(request: UserQuery):
     """Process a user query using RAG."""
-    # trace = langfuse.trace(name="process_query")
+    trace = langfuse.trace(name="process_query")
     context = GmailClient()
     last_email = await context.get_last_email()
     print(f"Last email details: {context}")
 
     request = UserQuery(
-        query: "Analyze this email and determine if it is spam. Consider the sender, subject, content, and any suspicious patterns or red flags. Provide a clear explanation of why it is or is not spam.",
-        context: {
+        query="Analyze this email and determine if it is spam. Consider the sender, subject, content, and any suspicious patterns or red flags. Provide a clear explanation of why it is or is not spam.",
+        context={
             "email_content": last_email['snippet'],
             "email_metadata": {
                 f"from: {last_email['from']}",
@@ -73,7 +77,7 @@ async def process_query():
     )
     try:
         if not request.query.strip():
-            # trace.error("Empty query")
+            langfuse.api.observations.create(trace_id=trace.id, type="error", name="empty-query", error={"message": "Empty query"})
             return Response(
                 answer=None,
                 sources=[],
@@ -81,17 +85,19 @@ async def process_query():
                 error="Query cannot be empty",
             )
 
-        # trace.span(
-        #     name="input",
-        #     input={"query": request.query, "context": request.context}
-        # )
+        langfuse.api.observations.create(
+            trace_id=trace.id,
+            type="span",
+            name="input-processing",
+            input={"query": request.query, "context": request.context}
+        )
 
         result = await workflow.run(
             {"query": request.query, "context": request.context}
         )
 
         if not result or not result.get("answer"):
-            # trace.error("No response generated")
+            langfuse.api.observations.create(trace_id=trace.id, type="error", name="no-response", error={"message": "No response generated"})
             return Response(
                 answer=None,
                 sources=result.get("sources", []),
@@ -99,16 +105,19 @@ async def process_query():
                 error="Failed to generate a response",
             )
 
-        # trace.span(
-        #     name="output",
-        #     output={
-        #         "answer": result["answer"],
-        #         "sources": result.get("sources", []),
-        #         "metadata": result.get("metadata", {})
-        #     }
-        # )
+        # Span for output processing
+        langfuse.api.observations.create(
+            trace_id=trace.id,
+            type="span",
+            name="output-processing",
+            output={
+                "answer": result["answer"],
+                "sources": result.get("sources", []),
+                "metadata": result.get("metadata", {})
+            }
+        )
         print(f"hello: {result}")
-        workflow.invoke({"input": request.query}, config={"callbacks": [langfuse_handler]})
+        chain.invoke({"input": request.query}, config={"callbacks": [langfuse_handler]})
 
         return Response(
             answer=result["answer"],
@@ -118,7 +127,7 @@ async def process_query():
 
     except Exception as e:
         error_msg = str(e)
-        # trace.error(error_msg)
+        langfuse.api.observations.create(trace_id=trace.id, type="error", name="processing-error", error={"message": error_msg})
         print(f"Error processing query: {error_msg}")
         return Response(
             answer=None,
@@ -126,11 +135,22 @@ async def process_query():
             metadata={"error_type": type(e).__name__},
             error=error_msg,
         )
-    # finally:
-    #     await trace.end()
+    finally:
+    # Update trace status to complete
+        langfuse.api.traces.update(trace.id, status="success")
 
 async def main():
-    await process_query()
+    context = GmailClient()
+    last_email = await context.get_last_email()
+    print(f"Last email details: {context}")
+    request = {
+        "query": "Analyze this email and determine if it is spam. Consider the sender, subject, content, and any suspicious patterns or red flags. Provide a clear explanation of why it is or is not spam.",
+        "context":{
+            f"email_content: last_email['snippet']",
+            f"'from': {last_email['from']}, 'subject': {last_email['subject']}, 'snippet': {last_email['snippet']}",
+        }
+    }
+    await process_query(request=request)
 if __name__ == "__main__":
     asyncio.run(main()) 
 
