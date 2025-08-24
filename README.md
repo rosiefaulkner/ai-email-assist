@@ -85,7 +85,7 @@ This intelligent email inbox helper implements a Knowledge Graph built on top of
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rosiefaulkner/ai-email-assist.git
    cd ai-email-assist
    ```
 
