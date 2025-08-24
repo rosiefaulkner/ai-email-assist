@@ -153,15 +153,3 @@ class GmailClient:
         except Exception as e:
             print(f"Error retrieving message {message_id}: {str(e)}")
             return None
-# import asyncio
-
-# async def main():
-#     client = GmailClient()
-#     last_email = await client.get_last_email()
-#     print("Last email details:")
-#     print(f"From: {last_email['from']}")
-#     print(f"Subject: {last_email['subject']}")
-#     print(f"Snippet: {last_email['snippet']}")
-
-# if __name__ == "__main__":
-#     asyncio.run(main())

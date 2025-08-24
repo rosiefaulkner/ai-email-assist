@@ -138,17 +138,3 @@ class GeminiAgent:
 
         except Exception:
             return 0.0
-
-# import asyncio
-
-# async def main():
-#     query="Analyze this email and determine if it is spam. Consider the sender, subject, content, and any suspicious patterns or red flags. Provide a clear explanation of why it is or isn't spam."
-#     context=[
-#         "email_content: Dear Sir/Madam, I am a prince from Nigeria and I need your assistance...",
-#         "email_metadata: {\"from\": \"        \"email_metadata: {\"from\": \"EMAIL\", \"subject\": \"Urgent Business Proposal\", \"date\": \"2024-01-13T00:00:00Z\"}"
-#     ]
-#     client = GeminiAgent()
-#     messages = await client.generate_response(query=query, context=context)
-#     print(messages)
-
-# asyncio.run(main())
