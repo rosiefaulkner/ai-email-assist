@@ -61,3 +61,5 @@ token.json
 # Git
 .gitignore
 .git/
+token.json
+token.pickle
